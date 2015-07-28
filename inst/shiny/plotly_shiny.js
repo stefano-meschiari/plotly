@@ -49,7 +49,10 @@ binding.renderValue = function(el, dat) {
           if (e.data.pong) {
             console.log('Initial pong, frame is ready to receive');
             clearInterval(pinger);
-            plot.postMessage(msg, 'https://plot.ly');
+            graphContentWindow.postMessage({
+                'task': 'listen',
+                'events': ['click', 'hover', 'zoom'] // Customize events here
+            }, 'https://plot.ly');
           } else if(e.data.type === 'hover' ||
                     e.data.type === 'zoom' ||
                     e.data.type === 'click'){
