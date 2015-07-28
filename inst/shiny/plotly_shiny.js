@@ -3,17 +3,30 @@
 (function() {
 
 var binding = new Shiny.OutputBinding();
+var inputBinding = new Shiny.InputBinding();
 
 binding.find = function(scope) {
   return $(scope).find('.plotly_shiny');
 };
+
+inputBinding.find = function(scope) {
+  return $(scope).find('.plotly_shiny');
+}
+
+inputBinding.subscribe = function(el, callback) {
+  $(el).on("plotly-event", function(event){
+    console.log("plotly event!!!");
+    debug;
+    callback();
+  })
+}
 
 binding.renderValue = function(el, dat) {
 
     // $el is the jQuery representation of this shiny output
     // for offline plots, this element is a div; otherwise, an iframe
     var $el = $(el);
-    
+
     if (dat[0].offline === true) {
       // why does this add traces instead of create a new plot?
       Plotly.newPlot($el.attr("id"), dat[0].data, dat[0].layout);
@@ -21,7 +34,7 @@ binding.renderValue = function(el, dat) {
       // see https://github.com/plotly/postMessage-API#newPlot
       var msg = {task: 'newPlot', data: dat[0].data, layout: dat[0].layout};
       var plot = $el[0].contentWindow;
-      // If we haven't attached any data to this binding, ping plotly to 
+      // If we haven't attached any data to this binding, ping plotly to
       // make sure it's ready to receive message(s). This will prevent posting
       // n >= 1 messages everytime shiny inputs change
       // Combines ideas from:
@@ -37,15 +50,23 @@ binding.renderValue = function(el, dat) {
             console.log('Initial pong, frame is ready to receive');
             clearInterval(pinger);
             plot.postMessage(msg, 'https://plot.ly');
+          } else if(e.data.type === 'hover' ||
+                    e.data.type === 'zoom' ||
+                    e.data.type === 'click'){
+              // Create the event
+              var event = new CustomEvent("plotly-event", { "detail": "Example of an event" });
+
+              // Dispatch/Trigger/Fire the event
+              document.dispatchEvent(event);
           }
         });
         // now attach some arbitrary data
         $el.data("plotly", {plotly: 'rules'});
       }
-      
+
       plot.postMessage(msg, 'https://plot.ly');
     }
-    
+
 };
 
 Shiny.outputBindings.register(binding, "plotlyEmbed");
